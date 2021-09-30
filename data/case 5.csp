@@ -1,0 +1,47 @@
+﻿////////////////The buffers//////////////////
+
+#define N 10;
+
+channel buffer3 N;
+channel buffer1 N;
+channel buffer2 N;
+channel buffer4 N;
+
+
+////////////////The messages//////////////////
+var req = 1;
+var info = 2;
+var infoAva = 3;
+var itin = 4;
+var book = 5;
+var ack = 6;
+var invoice = 7;
+var res = 8;
+
+////////////////The process of each participating microservice//////////////////
+PM1() = buffer3!req-> P_1();
+P_1() = buffer1?[x1==8]x1-> Skip [] buffer1?[x2==7]x2 ->buffer1?[x1==8]x1-> Skip[] buffer1?[x1==8]x1->  buffer1?[x2==7]x2->Skip; 
+
+PM2() = buffer2?[x3==5]x3 -> buffer3!ack-> P_2();
+P_2() = Skip [] buffer1!invoice-> Skip;
+
+PM3() = buffer3?[x4==1]x4 -> buffer4!info -> buffer3?[x5==3]x5 -> P_3();
+P_3()=buffer3?[x6==4]x6 -> P_3() [] buffer2!book -> buffer3?[x7==6]x7 -> buffer1!res -> Skip;
+
+PM4() = buffer4?[x8==2]x8 -> buffer3!infoAva -> P_4();
+P_4()= Skip [] buffer3!itin -> P_4();
+
+
+////////////////The process of a asynchronous interaction behavior of a microservice system //////////////////
+System() = PM1() ||| PM2() ||| PM3() ||| PM4();
+
+////////////////The interaction soundeness//////////////////
+#define buf1 call(cempty,buffer1) == true;
+#define buf2 call(cempty,buffer2) == true;
+#define buf3 call(cempty,buffer3) == true;
+#define buf4 call(cempty,buffer4) == true;
+
+
+#assert System()|= []("init" -> <> ("terminate" && buf1 && buf2 && buf3 && buf4));
+#assert System() deadlockfree;
+//#assert System()|= []("init" -> <> ("terminate"));

@@ -1,0 +1,46 @@
+﻿////////////////The buffers//////////////////
+#define N 10;
+
+channel buffer2 N;
+channel buffer3 N;
+channel buffer1 N;
+channel buffer4 N;
+
+channel buffer5 N;
+channel buffer6 N;
+channel buffer7 N;
+channel buffer8 N;
+
+////////////////The messages//////////////////
+var conn = 1;
+var req = 2;
+var reply = 3;
+var abort = 4;
+var book = 5;
+var pay = 6;
+var store = 7;
+
+////////////////The process of each participating microservice//////////////////
+PM1() = buffer2!conn-> buffer2!req-> P_1()[]buffer2!conn-> buffer2!req-> buffer1?[x1==3]x1-> buffer2!abort-> Skip []buffer2!conn-> buffer2!req-> buffer1?[x1==3]x1-> buffer2!book-> buffer2!pay -> Skip;
+P_1() = buffer1?[x1==3]x1->  buffer2!req-> P_1();
+
+PM2() = buffer2?[x2==1]x2-> buffer2?[x3==2]x3-> P_2()[]buffer2?[x2==1]x2-> buffer2?[x3==2]x3-> buffer1!reply->  buffer2?[x4==4]x4-> Skip [] buffer2?[x2==1]x2-> buffer2?[x3==2]x3-> buffer1!reply-> buffer2?[x5==5]x5-> buffer4!store-> Skip;
+P_2() = buffer1!reply->  buffer2?[x3==2]x3-> P_2();
+
+PM3() = buffer3?[x6==6]x6-> Skip;
+
+PM4() = buffer4?[x7==7]x7-> Skip;
+
+////////////////The process of a asynchronous interaction behavior of a microservice system //////////////////
+System() = PM1() ||| PM2() ||| PM3() ||| PM4();
+
+////////////////The interaction soundeness//////////////////
+#define buf12 call(cempty,buffer2) == true;
+#define buf13 call(cempty,buffer3) == true;
+#define buf21 call(cempty,buffer1) == true;
+#define buf24 call(cempty,buffer4) == true;
+
+
+#assert System()|= []("init" -> <> ("terminate" && buf12 && buf13 && buf21 && buf24));
+#assert System() deadlockfree;
+//#assert System()|= []("init" -> <> ("terminate"));

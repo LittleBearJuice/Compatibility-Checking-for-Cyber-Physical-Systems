@@ -1,0 +1,28 @@
+﻿////////////////The FIFO buffers//////////////////
+#define N 3;
+
+channel buffer1 N;
+channel buffer2 N;
+
+
+////////////////The messages//////////////////
+var sendnews = 1;
+var ident = 2;
+var alive = 3;
+
+CPMS1() = buffer2!sendnews-> buffer1?2->CPMS1_P_1();
+CPMS1_P_1() = buffer1?3->buffer2!sendnews->CPMS1_P_1();
+
+CPMS2() = buffer1!ident->buffer1!alive->CPMS2_P_1();
+CPMS2_P_1() = buffer2?1-> buffer1!alive -> CPMS2_P_1();
+
+////////////// the asynchronous composition //////////////////
+System_k() = CPMS1() ||| CPMS2();
+
+//////////////// empty buffer//////////////////
+#define buf1 call(cempty,buffer1) == true;
+#define buf2 call(cempty,buffer2) == true;
+
+#assert System_k()|= []("init" -> <> ("terminate" && buf1 && buf2 ));
+#assert System_k() deadlockfree;
+

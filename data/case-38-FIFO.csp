@@ -1,0 +1,38 @@
+﻿#define N 3;
+
+////////////////The buffers//////////////////
+channel buffer1 N;
+channel buffer2 N;
+channel buffer3 N;
+
+
+////////////////The messages//////////////////
+var a = 1;
+var b = 2;
+var e = 4;
+
+
+////////////////The process of each participating microservice//////////////////
+PM1() = buffer3!a -> Skip ;  
+
+PM2() = buffer3!b ->  buffer2?4 -> Skip;
+
+PM3() = buffer3?1 -> buffer2!e ->  buffer3?2 -> Skip;
+
+
+
+////////////////The process of a asynchronous interaction behavior of a microservice system //////////////////
+System() = PM1() ||| PM2() ||| PM3();
+
+
+
+//#define buf1 call(cempty,buffer1) == true;
+#define buf2 call(cempty,buffer2) == true;
+#define buf3 call(cempty,buffer3) == true;
+
+
+#assert System() deadlockfree;
+
+#assert System()|= []("init" -> <> ("terminate"  && buf2 && buf3));
+
+

@@ -1,0 +1,41 @@
+﻿////////////////The buffers//////////////////
+
+#define N 2;
+
+channel buffer1 N;
+channel buffer2 N;
+channel buffer3 N;
+channel buffer4 N;
+
+////////////////The messages//////////////////
+var a = 1;
+var b = 2;
+var c = 3;
+var d = 4;
+var e = 5;
+
+
+////////////////The process of each participating microservice//////////////////
+PM1() = buffer2!a -> buffer1?2 -> buffer4!d -> PM1() ;  
+
+PM2() = buffer3!c -> buffer2?1 -> PM2();
+
+PM3() = buffer1!b -> buffer3?3 -> buffer4!e -> PM3() ; 
+
+PM4() = buffer4?4 -> PM4() []  buffer4?5 -> PM4() ; 
+
+
+
+
+
+////////////////The process of a asynchronous interaction behavior of a microservice system //////////////////
+System() = PM1() ||| PM2() ||| PM3() ||| PM4() ;
+
+#define buf1 call(cempty,buffer1) == true;
+#define buf2 call(cempty,buffer2) == true;
+#define buf3 call(cempty,buffer3) == true;
+#define buf4 call(cempty,buffer4) == true;
+
+
+#assert System()|= []("init" -> <> ("terminate" && buf1 && buf2 && buf3 && buf4 ));
+#assert System() deadlockfree;
